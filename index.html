@@ -1,0 +1,2528 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <title>Quick Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="problems.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #3b82f6;
+            --primary-green: #10b981;
+            --primary-purple: #8b5cf6;
+            --accent-pink: #ec4899;
+            --accent-amber: #f59e0b;
+            --accent-cyan: #06b6d4;
+            --bg-light: #f8fafc;
+            --bg-white: #ffffff;
+            --text-dark: #334155;
+            --text-gray: #64748b;
+            --border-light: #e2e8f0;
+            --shadow-soft: rgba(0, 0, 0, 0.1);
+        }
+        body {
+            font-family: "Noto Sans JP", "Inter", sans-serif;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #f8fafc 100%);
+            min-height: 100vh;
+            touch-action: manipulation;
+            overflow-x: hidden;
+            color: var(--text-dark);
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .container-spacing {
+            margin: 0 auto;
+            max-width: 95%;
+            width: 100%;
+        }
+        @media (min-width: 640px) {
+            .container-spacing {
+                max-width: 500px;
+            }
+        }
+        @media (min-width: 768px) {
+            .container-spacing {
+                max-width: 600px;
+            }
+        }
+        @media (min-width: 1024px) {
+            .container-spacing {
+                max-width: 700px;
+            }
+        }
+        .game-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            color: var(--primary-blue);
+            text-align: center;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+        }
+        .clean-card {
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+        }
+        .clean-button {
+            background: var(--primary-blue);
+            border: none;
+            color: white;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px var(--shadow-soft);
+        }
+        .clean-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px var(--shadow-soft);
+            background: #2563eb;
+        }
+        .clean-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px var(--shadow-soft);
+        }
+        .subject-btn {
+            background: var(--bg-white);
+            border: 2px solid var(--border-light);
+            border-radius: 12px;
+            color: var(--text-dark);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            padding: 1rem 0.75rem;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px var(--shadow-soft);
+        }
+        .subject-btn:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px var(--shadow-soft);
+        }
+        .subject-btn.active {
+            background: #eff6ff;
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px var(--shadow-soft);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        .modal.show {
+            display: flex;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        
+        /* 音声設定モーダル専用のスタイル */
+        #voiceSettingsModal {
+            align-items: flex-start;
+            padding-top: 3rem;
+        }
+        
+        #voiceSettingsModal .clean-card {
+            margin-top: 0;
+            margin-bottom: 2rem;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            font-weight: 600;
+            z-index: 100;
+            animation: particleFloat 2s ease-out forwards;
+            font-size: 18px;
+        }
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-80px) scale(1.2);
+                opacity: 0;
+            }
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-white);
+            color: var(--text-dark);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1001;
+            box-shadow: 0 4px 12px var(--shadow-soft);
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .floating-button {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            width: 56px;
+            height: 56px;
+            background: var(--primary-blue);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px var(--shadow-soft);
+            transition: all 0.2s ease;
+            z-index: 1002;
+            cursor: pointer;
+        }
+        
+        .floating-button.hidden {
+            display: none !important;
+        }
+        .floating-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px var(--shadow-soft);
+        }
+
+        /* 音声設定ボタン用のスタイル */
+        .voice-settings-button {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: var(--primary-green);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px var(--shadow-soft);
+            transition: all 0.2s ease;
+            z-index: 1002;
+            cursor: pointer;
+        }
+        
+        .voice-settings-button.hidden {
+            display: none !important;
+        }
+        
+        .voice-settings-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px var(--shadow-soft);
+            background: #059669;
+        }
+
+        .quiz-option {
+            background: var(--bg-white);
+            border: 2px solid var(--border-light);
+            color: var(--text-dark);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-size: 0.9rem;
+            position: relative;
+            box-shadow: 0 2px 4px var(--shadow-soft);
+        }
+        .quiz-option:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px var(--shadow-soft);
+        }
+        .quiz-explanation {
+            height: 150px;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            border: 2px solid var(--border-light);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            text-align: center;
+            overflow-y: auto;
+            box-sizing: border-box;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+        .quiz-explanation p {
+            margin: 0;
+            padding: 0;
+            word-wrap: break-word;
+            max-height: 100%;
+            overflow: hidden;
+            font-size: 1rem;
+        }
+        .quiz-explanation.has-content {
+            border-color: var(--primary-green);
+            background: #f0fdf4;
+        }
+        .subject-modal-content {
+            max-height: 85vh;
+            overflow-y: auto;
+            padding-top: 0;
+        }
+        
+        .modal .clean-card {
+            margin: 2rem 1rem 1rem 1rem;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        
+        @media (max-width: 640px) {
+            /* モバイルでのスクロール改善 */
+            .modal .clean-card {
+                margin: 1.5rem 0.25rem 0.25rem 0.25rem;
+                padding: 0.75rem;
+                max-height: 92vh;
+            }
+            
+            /* 音声設定モーダルのモバイル調整 */
+            #voiceSettingsModal {
+                padding-top: 2rem;
+            }
+            
+            #voiceSettingsModal .clean-card {
+                margin: 0.5rem 0.25rem 2rem 0.25rem;
+            }
+        }
+        .subject-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+        .category-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.5rem;
+        }
+        .back-button {
+            background: #f1f5f9;
+            border: 1px solid var(--border-light);
+            color: var(--text-dark);
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        .back-button:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+        .category-btn {
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            color: var(--text-dark);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            padding: 0.75rem 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: 60px;
+            box-shadow: 0 1px 3px var(--shadow-soft);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .category-btn:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px var(--shadow-soft);
+        }
+        .category-btn.active {
+            background: #eff6ff;
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px var(--shadow-soft);
+        }
+        .stats-display {
+            background: #f8fafc;
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 4px var(--shadow-soft);
+        }
+        .section-divider {
+            height: 1px;
+            background: var(--border-light);
+            margin: 1rem 0;
+        }
+        .grade-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-gray);
+            text-align: center;
+            margin: 0.75rem 0 0.5rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* 音声選択関連のスタイル */
+        .voice-option {
+            background: var(--bg-white);
+            border: 2px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            box-shadow: 0 2px 4px var(--shadow-soft);
+        }
+        
+        .voice-option:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px var(--shadow-soft);
+        }
+        
+        .voice-option.selected {
+            border-color: var(--primary-green);
+            background: #f0fdf4;
+            box-shadow: 0 4px 8px var(--shadow-soft);
+        }
+        
+        .voice-option.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .voice-preview-btn {
+            background: var(--accent-cyan);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px var(--shadow-soft);
+        }
+        
+        .voice-preview-btn:hover {
+            background: #0891b2;
+            transform: translateY(-1px);
+        }
+        
+        .voice-toggle {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .voice-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .voice-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+        
+        .voice-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .voice-slider {
+            background: var(--primary-green);
+        }
+        
+        input:checked + .voice-slider:before {
+            transform: translateX(26px);
+        }
+
+        @media (max-width: 640px) {
+            .container-spacing {
+                max-width: 95%;
+                margin-bottom: 2rem;
+            }
+            /* モバイルでのスクロール改善 */
+            .modal .clean-card {
+                margin: 0.25rem;
+                padding: 0.75rem;
+                max-height: 92vh;
+            }
+            
+            .subject-modal-content {
+                max-height: 92vh;
+                padding-top: 0;
+            }
+            
+            /* フローティングボタンの位置調整 */
+            .floating-button {
+                bottom: 20px;
+                left: 20px;
+                width: 52px;
+                height: 52px;
+                font-size: 20px;
+            }
+
+            .voice-settings-button {
+                bottom: 20px;
+                right: 20px;
+                width: 52px;
+                height: 52px;
+                font-size: 20px;
+            }
+            
+            .clean-card {
+                margin: 0.5rem;
+                padding: 1rem;
+            }
+            .clean-card:last-of-type {
+                margin-bottom: 4rem;
+            }
+            body {
+                padding-bottom: 5rem;
+            }
+            .game-title {
+                font-size: clamp(1.25rem, 6vw, 2rem);
+            }
+            .subject-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem;
+            }
+            .category-grid {
+                grid-template-columns: 1fr;
+                gap: 0.4rem;
+            }
+            .subject-btn {
+                padding: 0.75rem 0.5rem;
+                min-height: 70px;
+                font-size: 0.8rem;
+            }
+            .category-btn {
+                padding: 0.6rem 0.4rem;
+                min-height: 50px;
+                font-size: 0.75rem;
+            }
+            .subject-icon {
+                font-size: 1.5rem;
+            }
+            .quiz-option {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.85rem;
+            }
+            #quizQ {
+                font-size: 0.9rem;
+                line-height: 1.3;
+            }
+            .quiz-explanation {
+                height: 120px;
+                padding: 0.5rem;
+                font-size: 0.9rem;
+                line-height: 1.3;
+            }
+            .quiz-explanation p {
+                font-size: 0.9rem;
+            }
+        }
+        .mode-btn {
+            background: var(--bg-white);
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            color: var(--text-dark);
+            transition: all 0.2s ease;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px var(--shadow-soft);
+        }
+        .mode-btn:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px var(--shadow-soft);
+        }
+        .mode-btn.active {
+            background: #eff6ff;
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px var(--shadow-soft);
+        }
+
+        /* モーダル内のスクロール改善 */
+        .modal .clean-card .text-center:first-child {
+            padding-top: 0.5rem;
+        }
+        
+        .category-grid {
+            padding-bottom: 1rem;
+        }
+        
+        /* モーダルのスクロール領域を適切に設定 */
+        #geographyModal .clean-card,
+        #historyModal .clean-card,
+        #civicsModal .clean-card,
+        #chemistryModal .clean-card,
+        #biologyModal .clean-card,
+        #physicsModal .clean-card,
+        #earthModal .clean-card,
+        #englishWordsModal .clean-card,
+        #englishPhrasesModal .clean-card,
+        #englishGrammarModal .clean-card {
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        /* タップ拡大防止 */
+        button, .subject-btn, .category-btn, .quiz-option, .clean-button, .back-button, .mode-btn {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            touch-action: manipulation;
+            -webkit-appearance: none;
+        }
+        
+        /* ダブルタップズーム防止 */
+        * {
+            touch-action: manipulation;
+        }
+        
+        /* iOS Safari の拡大防止 */
+        input, select, textarea {
+            font-size: 16px;
+        }
+        
+        /* モーダル内のスクロール改善 */
+        .modal {
+            padding: 0.5rem;
+        }
+        
+        .modal .clean-card {
+            position: relative;
+            top: 0;
+        }
+        
+        @media (max-width: 640px) {
+            .modal {
+                padding: 0.25rem;
+            }
+            
+            /* より上部まで見えるようにマージンを増加 */
+            .modal .clean-card {
+                margin-top: 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center pt-6 pb-12 gap-6 relative">
+    <div id="mainSubjectModal" class="modal show">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-6">
+                <h1 class="game-title">Quick Quiz</h1>
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    📚 教科を選択
+                </h2>
+                <p class="text-gray-600 text-sm">学習したい教科を選んでください。</p>
+            </div>
+            <div class="grid subject-grid mb-6">
+                <button class="subject-btn" data-subject="social">
+                    <div class="subject-icon text-2xl mb-1">🌍</div>
+                    <div class="subject-name font-semibold text-sm">社会</div>
+                </button>
+                <button class="subject-btn" data-subject="science">
+                    <div class="subject-icon text-2xl mb-1">🔬</div>
+                    <div class="subject-name font-semibold text-sm">理科</div>
+                </button>
+                <button class="subject-btn" data-subject="english">
+                    <div class="subject-icon text-2xl mb-1">📖</div>
+                    <div class="subject-name font-semibold text-sm">英語</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="socialModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-6">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    🌍 社会
+                </h2>
+                <p class="text-gray-600 text-sm">分野を選んでください。</p>
+            </div>
+            <div class="grid subject-grid mb-6">
+                <button class="subject-btn" data-category="geography">
+                    <div class="subject-icon text-2xl mb-1">🗺️</div>
+                    <div class="subject-name font-semibold text-sm">地理</div>
+                </button>
+                <button class="subject-btn" data-category="history">
+                    <div class="subject-icon text-2xl mb-1">🏛️</div>
+                    <div class="subject-name font-semibold text-sm">歴史</div>
+                </button>
+                <button class="subject-btn" data-category="civics">
+                    <div class="subject-icon text-2xl mb-1">⚖️</div>
+                    <div class="subject-name font-semibold text-sm">公民</div>
+                </button>
+            </div>
+            <div class="text-center">
+                <button class="back-button" onclick="goBackToMain()">
+                    ← 教科選択に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scienceModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-6">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    🔬 理科
+                </h2>
+                <p class="text-gray-600 text-sm">分野を選んでください。</p>
+            </div>
+            <div class="grid subject-grid mb-6">
+                <button class="subject-btn" data-category="chemistry">
+                    <div class="subject-icon text-2xl mb-1">🧪</div>
+                    <div class="subject-name font-semibold text-sm">化学</div>
+                </button>
+                <button class="subject-btn" data-category="biology">
+                    <div class="subject-icon text-2xl mb-1">🧬</div>
+                    <div class="subject-name font-semibold text-sm">生物</div>
+                </button>
+                <button class="subject-btn" data-category="physics">
+                    <div class="subject-icon text-2xl mb-1">⚛️</div>
+                    <div class="subject-name font-semibold text-sm">物理</div>
+                </button>
+                <button class="subject-btn" data-category="earth">
+                    <div class="subject-icon text-2xl mb-1">🌍</div>
+                    <div class="subject-name font-semibold text-sm">地学</div>
+                </button>
+            </div>
+            <div class="text-center">
+                <button class="back-button" onclick="goBackToMain()">
+                    ← 教科選択に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="englishModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-6">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    📖 英語
+                </h2>
+                <p class="text-gray-600 text-sm">分野を選んでください。</p>
+            </div>
+            <div class="grid subject-grid mb-6">
+                <button class="subject-btn" data-category="english_words">
+                    <div class="subject-icon text-2xl mb-1">📝</div>
+                    <div class="subject-name font-semibold text-sm">英単語</div>
+                </button>
+                <button class="subject-btn" data-category="english_phrases">
+                    <div class="subject-icon text-2xl mb-1">💬</div>
+                    <div class="subject-name font-semibold text-sm">英熟語</div>
+                </button>
+                <button class="subject-btn" data-category="english_grammar">
+                    <div class="subject-icon text-2xl mb-1">📘</div>
+                    <div class="subject-name font-semibold text-sm">語形変化</div>
+                </button>
+            </div>
+            <div class="text-center">
+                <button class="back-button" onclick="goBackToMain()">
+                    ← 教科選択に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="geographyModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    🗺️ 地理
+                </h2>
+                <p class="text-gray-600 text-sm">学習する単元を選んでください。<br>複数の選択もできます。</p>
+            </div>
+            <div class="grid category-grid mb-4" id="geographyCategories">
+                </div>
+            <div class="text-center space-y-2">
+                <button id="startGeographyQuiz" class="clean-button px-6 py-2 text-sm" disabled>
+                    決定する
+                </button>
+                <br>
+                <button class="back-button" onclick="goBackToSocial()">
+                    ← 社会に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    🏛️ 歴史
+                </h2>
+                <p class="text-gray-600 text-sm">学習する単元を選んでください。<br>複数の選択もできます。</p>
+            </div>
+            <div class="grid category-grid mb-4" id="historyCategories">
+                </div>
+            <div class="text-center space-y-2">
+                <button id="startHistoryQuiz" class="clean-button px-6 py-2 text-sm" disabled>
+                    決定する
+                </button>
+                <br>
+                <button class="back-button" onclick="goBackToSocial()">
+                    ← 社会に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="civicsModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    ⚖️ 公民
+                </h2>
+                <p class="text-gray-600 text-sm"></p>
+            </div>
+            <div class="grid category-grid mb-4" id="civicsCategories">
+                </div>
+            <div class="text-center space-y-2">
+                <button id="startCivicsQuiz" class="clean-button px-6 py-2 text-sm" disabled>
+                    決定する
+                </button>
+                <br>
+                <button class="back-button" onclick="goBackToSocial()">
+                    ← 社会に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chemistryModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    🧪 化学
+                </h2>
+                <p class="text-gray-600 text-sm">学習する単元を選んでください。<br>複数選択もできます。</p>
+            </div>
+            <div class="grid category-grid mb-4" id="chemistryCategories">
+                </div>
+            <div class="text-center space-y-2">
+                <button id="startChemistryQuiz" class="clean-button px-6 py-2 text-sm" disabled>
+                    決定する
+                </button>
+                <br>
+                <button class="back-button" onclick="goBackToScience()">
+                    ← 理科に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="biologyModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    🧬 生物
+                </h2>
+                <p class="text-gray-600 text-sm">学習する単元を選んでください。<br>複数選択もできます。</p>
+            </div>
+            <div class="grid category-grid mb-4" id="biologyCategories">
+                </div>
+            <div class="text-center space-y-2">
+                <button id="startBiologyQuiz" class="clean-button px-6 py-2 text-sm" disabled>
+                    決定する
+                </button>
+                <br>
+                <button class="back-button" onclick="goBackToScience()">
+                    ← 理科に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="physicsModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    ⚛️ 物理
+                </h2>
+                <p class="text-gray-600 text-sm">学習する単元を選んでください。<br>複数選択もできます。</p>
+            </div>
+            <div class="grid category-grid mb-4" id="physicsCategories">
+                </div>
+            <div class="text-center space-y-2">
+                <button id="startPhysicsQuiz" class="clean-button px-6 py-2 text-sm" disabled>
+                    決定する
+                </button>
+                <br>
+                <button class="back-button" onclick="goBackToScience()">
+                    ← 理科に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="earthModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    🌍 地学
+                </h2>
+                <p class="text-gray-600 text-sm">学習する単元を選んでください。<br>複数選択もできます。</p>
+            </div>
+            <div class="grid category-grid mb-4" id="earthCategories">
+                </div>
+            <div class="text-center space-y-2">
+                <button id="startEarthQuiz" class="clean-button px-6 py-2 text-sm" disabled>
+                    決定する
+                </button>
+                <br>
+                <button class="back-button" onclick="goBackToScience()">
+                    ← 理科に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="englishWordsModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    📝 英単語
+                </h2>
+                <p class="text-gray-600 text-sm">学習する単元を選んでください。<br>複数選択もできます。</p>
+            </div>
+            <div class="grid category-grid mb-4" id="englishWordsCategories">
+                </div>
+            <div class="text-center space-y-2">
+                <button id="startEnglishWordsQuiz" class="clean-button px-6 py-2 text-sm" disabled>
+                    決定する
+                </button>
+                <br>
+                <button class="back-button" onclick="goBackToEnglish()">
+                    ← 英語に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="englishPhrasesModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    💬 英熟語
+                </h2>
+                <p class="text-gray-600 text-sm">学習する単元を選んでください。<br>複数選択もできます。</p>
+            </div>
+            <div class="grid category-grid mb-4" id="englishPhrasesCategories">
+                </div>
+            <div class="text-center space-y-2">
+                <button id="startEnglishPhrasesQuiz" class="clean-button px-6 py-2 text-sm" disabled>
+                    決定する
+                </button>
+                <br>
+                <button class="back-button" onclick="goBackToEnglish()">
+                    ← 英語に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="englishGrammarModal" class="modal">
+        <div class="clean-card p-6 container-spacing subject-modal-content">
+            <div class="text-center mb-4">
+                <h2 class="text-lg font-semibold mb-3 text-gray-700">
+                    📘 語形変化
+                </h2>
+                <p class="text-gray-600 text-sm">学習する単元を選んでください。<br>複数選択もできます。</p>
+            </div>
+            <div class="grid category-grid mb-4" id="englishGrammarCategories">
+                </div>
+            <div class="text-center space-y-2">
+                <button id="startEnglishGrammarQuiz" class="clean-button px-6 py-2 text-sm" disabled>
+                    決定する
+                </button>
+                <br>
+                <button class="back-button" onclick="goBackToEnglish()">
+                    ← 英語に戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 音声設定モーダル -->
+    <div id="voiceSettingsModal" class="modal">
+        <div class="clean-card p-6 w-full max-w-md mx-4">
+            <div class="text-center mb-6">
+                <h2 class="text-xl font-semibold mb-3 text-gray-700">
+                    🔊 音声設定
+                </h2>
+                <p class="text-gray-600 text-sm">英語の発音設定を変更できます</p>
+            </div>
+            
+            <!-- 音声のON/OFF切り替え -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-700">音声再生</span>
+                    <label class="voice-toggle">
+                        <input type="checkbox" id="voiceEnabled" checked>
+                        <span class="voice-slider"></span>
+                    </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">英語の問題で自動発音を行います</p>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- 女性音声セクション -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-3">👩 女性音声</h3>
+                <div class="space-y-3" id="femaleVoices">
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- 男性音声セクション -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-3">👨 男性音声</h3>
+                <div class="space-y-3" id="maleVoices">
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- 閉じるボタン -->
+            <div class="text-center">
+                <button id="closeVoiceSettings" class="clean-button px-6 py-2 text-sm">
+                    ✅ 設定完了
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameScreen" class="hidden">
+        <div class="clean-card p-6 text-center container-spacing mb-6">
+            <h1 class="game-title">Quick Quiz</h1>
+            <div id="currentCategory" class="text-lg font-semibold text-gray-700 mb-4"></div>
+<div class="stats-display">
+    <div class="grid grid-cols-3 gap-4 text-center mb-4">
+        <div>
+            <div class="text-xl font-bold text-gray-800" id="correctCount">0</div>
+            <div class="text-xs text-gray-600">正解数</div>
+        </div>
+        <div>
+            <div class="text-xl font-bold text-gray-800" id="wrongCount">0</div>
+            <div class="text-xs text-gray-600">不正解数</div>
+        </div>
+        <div>
+            <div class="text-xl font-bold text-gray-800" id="totalCount">0</div>
+            <div class="text-xs text-gray-600">総問題数</div>
+        </div>
+    </div>
+    
+    <!-- 新しく追加する出題形式選択部分 -->
+    <div class="section-divider"></div>
+    <div class="text-center">
+        <div class="text-sm font-semibold text-gray-700 mb-3">📋 出題形式</div>
+        <div class="grid grid-cols-2 gap-2">
+            <button id="randomModeBtn" class="mode-btn active" data-mode="random">
+                🎲 ランダム
+            </button>
+            <button id="sequentialModeBtn" class="mode-btn" data-mode="sequential">
+                📋 順番通り
+            </button>
+        </div>
+        <div class="text-xs text-gray-600 mt-2" id="modeDescription">
+            問題をランダムに出題します
+        </div>
+    </div>
+</div>
+            <button id="startQuizButton" class="clean-button px-6 py-3 text-base font-semibold mt-6">
+                ✨ スタート
+            </button>
+        </div>
+    </div>
+
+    <div id="quizModal" class="modal">
+        <div class="clean-card p-4 w-full max-w-lg mx-4">
+            <div class="text-center mb-4">
+                <h2 class="font-semibold text-lg text-gray-700">
+                    ✨ Quick Quiz
+                </h2>
+            </div>
+            <div class="space-y-4">
+                <p id="quizQ" class="text-base font-medium text-center text-gray-800 leading-relaxed"></p>
+                <div id="quizOptions" class="space-y-2"></div>
+                <div id="quizExplanation" class="quiz-explanation">
+                    <p id="quizMsg" class="font-semibold text-center text-base"></p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="quizNext" class="flex-1 clean-button py-2 text-sm">
+                        🌟 次の問題
+                    </button>
+                    <button id="quizBack" class="flex-1 back-button py-2 text-sm">
+                        🏠 戻る
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="changeSubject" class="floating-button hidden">
+        📚
+    </button>
+
+    <!-- 音声設定ボタン -->
+    <button id="voiceSettingsButton" class="voice-settings-button hidden">
+        🔊
+    </button>
+
+    <div id="notification" class="notification">
+        <div class="flex items-center gap-3">
+            <span class="text-xl">✨</span>
+            <div>
+                <div class="font-semibold text-sm">Quick Quiz</div>
+                <div id="notificationText" class="text-xs text-gray-600"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ----------------- 効果音システム ----------------- */
+        class SoundSystem {
+            constructor() {
+                this.audioContext = null;
+                this.sounds = {};
+                this.initAudio();
+            }
+
+            initAudio() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('音声システムを初期化できませんでした');
+                }
+            }
+
+            playClick() {
+                this.createTone(800, 0.1, 0.05, 'square');
+            }
+
+            playCorrect() {
+                this.createTone(523, 0.1, 0.3);
+                setTimeout(() => this.createTone(659, 0.1, 0.3), 150);
+                setTimeout(() => this.createTone(784, 0.2, 0.3), 300);
+            }
+
+            playWrong() {
+                this.createTone(200, 0.3, 0.3, 'sawtooth');
+            }
+
+            playSuccess() {
+                const notes = [523, 587, 659, 698, 784, 880, 988, 1047];
+                notes.forEach((freq, i) => {
+                    setTimeout(() => this.createTone(freq, 0.15, 0.3), i * 100);
+                });
+            }
+
+            createTone(frequency, duration, volume = 0.3, type = 'sine') {
+                if (!this.audioContext) return;
+
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+
+                oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+                oscillator.type = type;
+
+                gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(volume, this.audioContext.currentTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + duration);
+            }
+        }
+
+        const soundSystem = new SoundSystem();
+
+        /* ----------------- 音声設定システム（完全修正版） ----------------- */
+        class VoiceSettingsSystem {
+            constructor() {
+                this.settings = {
+                    enabled: true,
+                    selectedVoice: null
+                };
+                this.availableVoices = [];
+                this.recommendedVoices = {
+                    female: [
+                        { name: 'Samantha', patterns: ['samantha'], description: '自然で聞き取りやすい' },
+                        { name: 'Google US English Female', patterns: ['google', 'female', 'us'], description: 'クリアで発音が正確' },
+                        { name: 'Microsoft Zira', patterns: ['zira', 'microsoft'], description: '親しみやすい声' }
+                    ],
+                    male: [
+                        { name: 'Alex', patterns: ['alex'], description: '標準的で聞き取りやすい' },
+                        { name: 'Google US English Male', patterns: ['google', 'male', 'us'], description: 'はっきりした発音' },
+                        { name: 'Microsoft David', patterns: ['david', 'microsoft'], description: '落ち着いた声' }
+                    ]
+                };
+                
+                // 包括的な性別判定用の名前データベース
+                this.maleNames = new Set([
+                    'alex', 'david', 'daniel', 'mike', 'michael', 'john', 'james', 'robert', 
+                    'william', 'richard', 'charles', 'joseph', 'thomas', 'christopher', 
+                    'matthew', 'anthony', 'mark', 'donald', 'steven', 'paul', 'andrew', 
+                    'joshua', 'kenneth', 'kevin', 'brian', 'george', 'edward', 'ronald', 
+                    'timothy', 'jason', 'jeffrey', 'ryan', 'jacob', 'gary', 'nicholas', 
+                    'eric', 'jonathan', 'stephen', 'larry', 'justin', 'scott', 'brandon', 
+                    'benjamin', 'samuel', 'frank', 'gregory', 'raymond', 'alexander', 
+                    'patrick', 'jack', 'dennis', 'jerry', 'tyler', 'aaron', 'henry', 
+                    'douglas', 'jose', 'peter', 'nathan', 'noah', 'ethan', 'mason', 
+                    'liam', 'lucas', 'logan', 'oliver', 'aiden', 'elijah', 
+                    'wayne', 'ralph', 'roy', 'eugene', 'louis', 'philip', 'bobby', 
+                    'rocko', 'rocky', 'reed', 'rick', 'ray', 'rob', 'rod', 'rex'
+                ]);
+                
+                this.femaleNames = new Set([
+                    'samantha', 'zira', 'susan', 'karen', 'lisa', 'betty', 'helen', 
+                    'sandra', 'donna', 'carol', 'ruth', 'sharon', 'michelle', 'laura', 
+                    'sarah', 'kimberly', 'deborah', 'dorothy', 'nancy', 
+                    'amy', 'angela', 'ashley', 'brenda', 'emma', 'olivia', 'sophia', 
+                    'isabella', 'charlotte', 'amelia', 'evelyn', 'abigail', 'harper', 
+                    'emily', 'elizabeth', 'avery', 'sofia', 'ella', 'madison', 'scarlett', 
+                    'victoria', 'aria', 'grace', 'chloe', 'camila', 'penelope', 'riley', 
+                    'layla', 'lillian', 'nora', 'zoe', 'mia', 'ava', 'anna', 'alice', 
+                    'shelley', 'shelly', 'sandy', 'mandy', 'cindy', 'wendy', 'judy', 
+                    'mary', 'patricia', 'jennifer', 'linda', 'barbara', 
+                    'jessica', 'tina', 'tanya', 'tracy', 'stephanie', 'nicole',
+                    'grandma', 'grandmother', 'mom', 'mother', 'aunt', 'sister'
+                ]);
+                
+                this.loadSettings();
+                this.initVoices();
+            }
+
+            initVoices() {
+                if ('speechSynthesis' in window) {
+                    // 音声リストの初期化を待つ
+                    const loadVoices = () => {
+                        this.availableVoices = speechSynthesis.getVoices()
+                            .filter(voice => voice.lang.startsWith('en-'));
+                        
+                        if (this.availableVoices.length > 0) {
+                            this.setupVoiceSettings();
+                        }
+                    };
+
+                    // 音声リストが既に読み込まれている場合
+                    if (speechSynthesis.getVoices().length > 0) {
+                        loadVoices();
+                    } else {
+                        // 音声リストの読み込みを待つ
+                        speechSynthesis.addEventListener('voiceschanged', loadVoices);
+                        // フォールバック
+                        setTimeout(loadVoices, 1000);
+                    }
+                }
+            }
+
+            findRecommendedVoice(recommendation) {
+                return this.availableVoices.find(voice => {
+                    const voiceName = voice.name.toLowerCase();
+                    return recommendation.patterns.every(pattern => 
+                        voiceName.includes(pattern.toLowerCase())
+                    );
+                }) || null;
+            }
+
+            determineVoiceGender(voice) {
+                const voiceName = voice.name.toLowerCase();
+                
+                // 明示的な性別キーワードをチェック
+                if (voiceName.includes('female') || voiceName.includes('woman') || voiceName.includes('girl')) {
+                    return 'female';
+                }
+                if (voiceName.includes('male') || voiceName.includes('man') || voiceName.includes('boy')) {
+                    return 'male';
+                }
+                
+                // 名前から性別を推定（最初の単語を取得）
+                const nameMatch = voiceName.match(/^(\w+)/);
+                if (nameMatch) {
+                    const firstName = nameMatch[1].toLowerCase();
+                    if (this.femaleNames.has(firstName)) {
+                        return 'female';
+                    }
+                    if (this.maleNames.has(firstName)) {
+                        return 'male';
+                    }
+                }
+                
+                // 特別なケースをチェック
+                if (voiceName.includes('grandma') || voiceName.includes('grandmother') || 
+                    voiceName.includes('mom') || voiceName.includes('mother')) {
+                    return 'female';
+                }
+                if (voiceName.includes('grandpa') || voiceName.includes('grandfather') || 
+                    voiceName.includes('dad') || voiceName.includes('father')) {
+                    return 'male';
+                }
+                
+                // どちらでもない場合はnullを返す
+                return null;
+            }
+
+            setupVoiceSettings() {
+                const femaleContainer = document.getElementById('femaleVoices');
+                const maleContainer = document.getElementById('maleVoices');
+
+                femaleContainer.innerHTML = '';
+                maleContainer.innerHTML = '';
+
+                // 推奨音声を最初に追加
+                this.recommendedVoices.female.forEach(recommendation => {
+                    const voice = this.findRecommendedVoice(recommendation);
+                    if (voice) {
+                        const voiceOption = this.createVoiceOption(voice, recommendation);
+                        femaleContainer.appendChild(voiceOption);
+                    }
+                });
+
+                this.recommendedVoices.male.forEach(recommendation => {
+                    const voice = this.findRecommendedVoice(recommendation);
+                    if (voice) {
+                        const voiceOption = this.createVoiceOption(voice, recommendation);
+                        maleContainer.appendChild(voiceOption);
+                    }
+                });
+
+                // フォールバック音声を追加（性別分類改善）
+                this.addFallbackVoices(femaleContainer, maleContainer);
+                
+                // 設定を復元
+                this.restoreSettings();
+            }
+
+            addFallbackVoices(femaleContainer, maleContainer) {
+                const addedVoices = new Set();
+                
+                // 既に追加された音声を記録
+                document.querySelectorAll('.voice-option').forEach(option => {
+                    addedVoices.add(option.dataset.voiceName);
+                });
+
+                // 性別が判定できた音声のみを追加
+                this.availableVoices.forEach(voice => {
+                    if (!addedVoices.has(voice.name)) {
+                        const gender = this.determineVoiceGender(voice);
+                        
+                        if (gender === 'female' && femaleContainer.children.length < 6) {
+                            const recommendation = {
+                                name: voice.name,
+                                description: '利用可能な音声'
+                            };
+                            const voiceOption = this.createVoiceOption(voice, recommendation);
+                            femaleContainer.appendChild(voiceOption);
+                            addedVoices.add(voice.name);
+                        } else if (gender === 'male' && maleContainer.children.length < 6) {
+                            const recommendation = {
+                                name: voice.name,
+                                description: '利用可能な音声'
+                            };
+                            const voiceOption = this.createVoiceOption(voice, recommendation);
+                            maleContainer.appendChild(voiceOption);
+                            addedVoices.add(voice.name);
+                        }
+                        // 性別が判定できない音声は表示しない
+                    }
+                });
+                
+                // もし音声が少なすぎる場合のフォールバック
+                if (femaleContainer.children.length === 0) {
+                    this.addGenericVoiceOption(femaleContainer, '利用可能な女性音声なし');
+                }
+                if (maleContainer.children.length === 0) {
+                    this.addGenericVoiceOption(maleContainer, '利用可能な男性音声なし');
+                }
+            }
+
+            addGenericVoiceOption(container, message) {
+                const div = document.createElement('div');
+                div.className = 'voice-option disabled';
+                div.style.opacity = '0.5';
+                div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="font-medium text-sm text-gray-600">${message}</div>
+                            <div class="text-xs text-gray-400">システム音声を使用します</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            }
+
+            createVoiceOption(voice, recommendation) {
+                const div = document.createElement('div');
+                div.className = 'voice-option';
+                div.dataset.voiceName = voice.name;
+                
+                div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="font-medium text-sm text-gray-800">${recommendation.name}</div>
+                            <div class="text-xs text-gray-500">${recommendation.description}</div>
+                        </div>
+                        <button class="voice-preview-btn ml-2" data-voice-name="${voice.name}">
+                            ▶️ テスト
+                        </button>
+                    </div>
+                `;
+
+                // クリックで選択
+                div.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('voice-preview-btn')) {
+                        this.selectVoice(voice);
+                        soundSystem.playClick();
+                    }
+                });
+
+                // プレビューボタン
+                const previewBtn = div.querySelector('.voice-preview-btn');
+                previewBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.previewVoice(voice);
+                    soundSystem.playClick();
+                });
+
+                return div;
+            }
+
+            selectVoice(voice) {
+                // 他の選択を解除
+                document.querySelectorAll('.voice-option').forEach(option => {
+                    option.classList.remove('selected');
+                });
+
+                // 新しい選択を設定
+                const option = document.querySelector(`[data-voice-name="${voice.name}"]`);
+                if (option) {
+                    option.classList.add('selected');
+                }
+
+                this.settings.selectedVoice = voice;
+                this.saveSettings();
+                showNotification(`音声を「${voice.name}」に変更しました`);
+            }
+
+            previewVoice(voice) {
+                if (!this.settings.enabled) return;
+
+                const utterance = new SpeechSynthesisUtterance('Hello! This is a test of the selected voice.');
+                utterance.voice = voice;
+                utterance.lang = voice.lang;
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                
+                speechSynthesis.cancel();
+                speechSynthesis.speak(utterance);
+            }
+
+            speak(text) {
+                if (!this.settings.enabled || !text) return;
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                if (this.settings.selectedVoice) {
+                    utterance.voice = this.settings.selectedVoice;
+                    utterance.lang = this.settings.selectedVoice.lang;
+                } else {
+                    // フォールバック音声を選択
+                    const englishVoices = this.availableVoices;
+                    if (englishVoices.length > 0) {
+                        const preferredVoice = englishVoices.find(v => 
+                            v.localService || v.default || v.name.toLowerCase().includes('google')
+                        ) || englishVoices[0];
+                        utterance.voice = preferredVoice;
+                        utterance.lang = preferredVoice.lang;
+                    } else {
+                        utterance.lang = 'en-US';
+                    }
+                }
+
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                
+                speechSynthesis.cancel();
+                speechSynthesis.speak(utterance);
+            }
+
+            toggleEnabled(enabled) {
+                this.settings.enabled = enabled;
+                this.saveSettings();
+                
+                const status = enabled ? 'ON' : 'OFF';
+                showNotification(`音声再生を${status}にしました`);
+            }
+
+            saveSettings() {
+                const settingsToSave = {
+                    enabled: this.settings.enabled,
+                    selectedVoiceName: this.settings.selectedVoice ? this.settings.selectedVoice.name : null
+                };
+                localStorage.setItem('voiceSettings', JSON.stringify(settingsToSave));
+            }
+
+            loadSettings() {
+                try {
+                    const saved = localStorage.getItem('voiceSettings');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        this.settings.enabled = parsed.enabled !== false; // デフォルトはtrue
+                        
+                        // 選択された音声名を保存（実際の音声オブジェクトは後で復元）
+                        this.savedVoiceName = parsed.selectedVoiceName;
+                    }
+                } catch (e) {
+                    console.log('音声設定の読み込みに失敗しました');
+                }
+            }
+
+            restoreSettings() {
+                // ON/OFF設定を復元
+                const voiceEnabledToggle = document.getElementById('voiceEnabled');
+                if (voiceEnabledToggle) {
+                    voiceEnabledToggle.checked = this.settings.enabled;
+                }
+
+                // 選択された音声を復元
+                if (this.savedVoiceName) {
+                    const savedVoice = this.availableVoices.find(voice => 
+                        voice.name === this.savedVoiceName
+                    );
+                    if (savedVoice) {
+                        this.selectVoice(savedVoice);
+                    }
+                }
+            }
+        }
+
+        const voiceSystem = new VoiceSettingsSystem();
+
+        /* ----------------- 更新された音声発音関数 ----------------- */
+        function speakWord(wordToSpeak) {
+            voiceSystem.speak(wordToSpeak);
+        }
+
+        function isEnglishCategory() {
+            return selectedCategories.some(categoryId => 
+                categoryId.startsWith('words_') || categoryId.startsWith('phrases_') || categoryId.startsWith('grammar_')
+            );
+        }
+
+        /* ----------------- カテゴリー定義 ----------------- */
+        const categories = {
+            geography: [
+                {id: 'geo_world_overview', name: '1.世界の姿'},
+                {id: 'geo_japan_overview', name: '2.日本の姿'},
+                {id: 'geo_world_life', name: '3.世界各地の人々の生活と環境'},
+                {id: 'geo_asia', name: '4.世界の諸地域　アジア州'},
+                {id: 'geo_europe', name: '5.世界の諸地域　ヨーロッパ州'},
+                {id: 'geo_africa', name: '6.世界の諸地域　アフリカ州'},
+                {id: 'geo_north_america', name: '7.世界の諸地域　北アメリカ州'},
+                {id: 'geo_south_america', name: '8.世界の諸地域　南アメリカ州'},
+                {id: 'geo_oceania', name: '9.世界の諸地域　オセアニア'},
+                {id: 'geo_japan_features', name: '10.日本の地域的特色'},
+                {id: 'geo_japan_kyushu', name: '11.日本の諸地域　九州地方'},
+                {id: 'geo_japan_chugoku', name: '12.日本の諸地域　中国・四国地方'},
+                {id: 'geo_japan_kinki', name: '13.日本の諸地域　近畿地方'},
+                {id: 'geo_japan_chubu', name: '14.日本の諸地域　中部地方'},
+                {id: 'geo_japan_kanto', name: '15.日本の諸地域　関東地方'},
+                {id: 'geo_japan_tohoku', name: '16.日本の諸地域　東北地方'},
+                {id: 'geo_japan_hokkaido', name: '17.日本の諸地域　北海道地方'}
+            ],
+            history: [
+                {id: 'hist_ancient', name: '1.文明のおこりと日本の成り立ち'},
+                {id: 'hist_ancient_state', name: '2.古代国家の歩みと東アジア'},
+                {id: 'hist_kamakura', name: '3.武士のおこりと鎌倉幕府'},
+                {id: 'hist_muromachi', name: '4.モンゴルの襲来と室町幕府'},
+                {id: 'hist_unification', name: '5.ヨーロッパ人との出会いと全国統一'},
+                {id: 'hist_edo_early', name: '6.江戸幕府の成立と鎖国'},
+                {id: 'hist_edo_develop', name: '7.産業の発達と幕府政治の展開'},
+                {id: 'hist_opening', name: '8.欧米の進出と日本の開国'},
+                {id: 'hist_meiji', name: '9.明治維新'},
+                {id: 'hist_wars', name: '10.日清・日露戦争と日本の産業革命'},
+                {id: 'hist_wwi', name: '11.第一次世界大戦と日本'},
+                {id: 'hist_wwii', name: '12.世界恐慌と第二次世界大戦'},
+                {id: 'hist_postwar', name: '13.戦後の日本の発展と国際社会'}
+            ],
+            civics: [
+                {id: 'civics_modern', name: '1.現代社会と私たち'},
+                {id: 'civics_constitution', name: '2.人間の尊重と日本国憲法'},
+                {id: 'civics_democracy', name: '3.現代の民主政治'},
+                {id: 'civics_economy', name: '4.暮らしと経済'}
+            ],
+            chemistry: [
+                {id: 'chemistry_basic', name: '1.物質とその性質'},
+                {id: 'chemistry_gas', name: '2.気体の性質'},
+                {id: 'chemistry_solution', name: '3.水溶液の性質'},
+                {id: 'chemistry_state', name: '4.状態変化'},
+                {id: 'chemistry_change', name: '5.物質の変化'},
+                {id: 'chemistry_structure', name: '6.物質の成り立ち'},
+                {id: 'chemistry_reaction', name: '7.物質どうしの化学変化'},
+                {id: 'chemistry_mass', name: '8.化学変化と質量'},
+                {id: 'chemistry_ion', name: '9.イオンと電池'},
+                {id: 'chemistry_acid', name: '10.酸、アルカリ、塩'}
+            ],
+            biology: [
+                {id: 'biology_flower', name: '1.花のつくり'},
+                {id: 'biology_plant', name: '2.根・葉のつくり、植物の特徴と分類'},
+                {id: 'biology_animal', name: '3.動物の特徴と分類'},
+                {id: 'biology_microscope', name: '4.顕微鏡の使い方'},
+                {id: 'biology_cell', name: '5.生物と細胞'},
+                {id: 'biology_plant_body', name: '6.植物のからだのつくり、植物と日光'},
+                {id: 'biology_digestion', name: '7.消化と吸収'},
+                {id: 'biology_breathing', name: '8.呼吸'},
+                {id: 'biology_circulation', name: '9.血液の循環、排出のしくみ'},
+                {id: 'biology_response', name: '10.刺激と反応、動物のからだ'},
+                {id: 'biology_growth', name: '11.生物の成長と細胞の変化'},
+                {id: 'biology_reproduction', name: '12.生物の生殖'},
+                {id: 'biology_heredity', name: '13.遺伝の規則性と遺伝子'},
+                {id: 'biology_evolution', name: '14.生物の進化、生態系と食物連鎖'},
+                {id: 'biology_environment', name: '15.自然と環境、人間と自然環境'}
+            ],
+            physics: [
+                {id: 'physics_light', name: '1.光による現象'},
+                {id: 'physics_sound', name: '2.音による現象'},
+                {id: 'physics_force', name: '3.力による現象'},
+                {id: 'physics_current', name: '4.電流と電圧'},
+                {id: 'physics_energy', name: '5.電気エネルギー'},
+                {id: 'physics_magnetic', name: '6.電流と磁界'},
+                {id: 'physics_balance', name: '7.力のつり合いと合成・分解'},
+                {id: 'physics_motion', name: '8.物体の運動'},
+                {id: 'physics_pressure', name: '9.水圧と浮力'},
+                {id: 'physics_work', name: '10.エネルギーと仕事'},
+                {id: 'physics_energy_change', name: '11.エネルギーの移り変わり'},
+                {id: 'physics_resources', name: '12.エネルギー資源の利用'}
+            ],
+            earth: [
+                {id: 'earth_volcano', name: '1.火山'},
+                {id: 'earth_earthquake', name: '2.地震'},
+                {id: 'earth_strata', name: '3.地層のでき方'},
+                {id: 'earth_weather', name: '4.気象の観測、大気圧と圧力'},
+                {id: 'earth_front', name: '5.気団と前線、日本の天気'},
+                {id: 'earth_cloud', name: '6.雲のでき方と水蒸気'},
+                {id: 'earth_celestial', name: '7.地球の動きと天体の動き'},
+                {id: 'earth_solar', name: '8.太陽系の天体'},
+                {id: 'earth_moon', name: '9.月と惑星の見え方、自然の恵みと災害'}
+            ],
+            english_words: [
+                {id: 'words_time', name: '月・序数'},
+                {id: 'words_week', name: '曜日'},
+                {id: 'words_timeday', name: '時・時間帯など'},
+                {id: 'words_season', name: '季節・家族'},
+                {id: 'words_sports', name: 'スポーツ・教科'},
+                {id: 'words_job', name: '職業・人・建物・施設'},
+                {id: 'words_uncountable', name: '数えられない名詞'},
+                {id: 'words_verb_important', name: '入試必出重要動詞'},
+                {id: 'words_verb_various', name: 'いろいろな意味をもつ動詞'},
+                {id: 'words_verb_set', name: 'セットで覚えておきたい動詞'},
+                {id: 'words_verb_other', name: 'その他の重要動詞'},
+                {id: 'words_adj_quantity', name: '数・量を表す形容詞'},
+                {id: 'words_adj_various', name: 'いろいろな形容詞'},
+                {id: 'words_adj_adv', name: 'その他の重要形容詞・副詞'},
+                {id: 'words_adv_manner', name: '様子を表す副詞'}
+            ],
+            english_phrases: [
+                {id: 'phrases_verb', name: 'よく出る動詞の熟語'},
+                {id: 'phrases_set', name: 'セットで覚えておきたい熟語'},
+                {id: 'phrases_similar', name: '意味の似ている熟語'},
+                {id: 'phrases_verb_other', name: 'その他の動詞の熟語'},
+                {id: 'phrases_be', name: 'be 動詞を使った熟語'},
+                {id: 'phrases_quantity', name: '数や量を表す熟語'},
+                {id: 'phrases_time_place', name: '時・場所を表す熟語'},
+                {id: 'phrases_important', name: 'その他の重要熟語'}
+            ],
+            english_grammar: [
+                {id: 'grammar_irregular_past', name: '不規則動詞 - 過去形・過去分詞'},
+                {id: 'grammar_irregular_same', name: '不規則動詞 - 過去形と過去分詞が同じ'},
+                {id: 'grammar_irregular_special', name: '不規則動詞 - 特殊なケース'},
+                {id: 'grammar_be_past', name: 'be 動詞 - 過去形・過去分詞'},
+                {id: 'grammar_regular', name: '規則動詞 - 過去形・過去分詞'},
+                {id: 'grammar_third_person', name: '三人称単数現在形'},
+                {id: 'grammar_ing', name: '動詞の -ing 形'},
+                {id: 'grammar_comparative', name: '形容詞 - 比較級・最上級'},
+                {id: 'grammar_more_most', name: 'more、most をつける形容詞'},
+                {id: 'grammar_noun_plural', name: '名詞の複数形'},
+                {id: 'grammar_irregular_plural', name: '不規則な複数形'},
+                {id: 'grammar_pronoun', name: '人称代名詞'}
+            ]
+        };
+
+        /* ----------------- ゲーム変数 ----------------- */
+        let selectedCategories = [];
+        let currentQuestionIndex = 0;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let totalCount = 0;
+        let usedQuestions = [];
+        let particleOffset = 0;
+        let currentSubject = '';
+        
+        // 新しく追加する出題形式関連の変数
+        let questionMode = 'random'; // 'random' または 'sequential'
+        let sequentialIndex = 0; // 順番通り出題用のインデックス
+
+        /* ----------------- エフェクト関数 ----------------- */
+        function createParticle(text, color, x, y) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.textContent = text;
+            particle.style.color = color;
+            particle.style.left = (x + particleOffset) + 'px';
+            particle.style.top = (y + particleOffset) + 'px';
+            particle.style.fontSize = '18px';
+            document.body.appendChild(particle);
+
+            particleOffset += 30;
+            if (particleOffset > 120) particleOffset = 0;
+
+            setTimeout(() => {
+                if (particle.parentNode) {
+                    particle.parentNode.removeChild(particle);
+                }
+            }, 2000);
+        }
+
+        function showNotification(text) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            notificationText.textContent = text;
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        /* ----------------- 画面遷移関数 ----------------- */
+        function hideAllModals() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.classList.remove('show');
+            });
+        }
+
+        function goBackToMain() {
+            hideAllModals();
+            document.getElementById('mainSubjectModal').classList.add('show');
+            soundSystem.playClick();
+        }
+
+        function goBackToSocial() {
+            hideAllModals();
+            document.getElementById('socialModal').classList.add('show');
+            soundSystem.playClick();
+        }
+
+        function goBackToScience() {
+            hideAllModals();
+            document.getElementById('scienceModal').classList.add('show');
+            soundSystem.playClick();
+        }
+
+        function goBackToEnglish() {
+            hideAllModals();
+            document.getElementById('englishModal').classList.add('show');
+            soundSystem.playClick();
+        }
+
+        /* ----------------- カテゴリー選択の初期化 ----------------- */
+        function initCategorySelection() {
+            // 地理カテゴリー（学年表記なし）
+            const geographyContainer = document.getElementById('geographyCategories');
+            categories.geography.forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('geography', category.id, btn);
+                geographyContainer.appendChild(btn);
+            });
+
+            // 歴史カテゴリー
+            const historyContainer = document.getElementById('historyCategories');
+            categories.history.forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('history', category.id, btn);
+                historyContainer.appendChild(btn);
+            });
+
+            // 公民カテゴリー
+            const civicsContainer = document.getElementById('civicsCategories');
+            categories.civics.forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('civics', category.id, btn);
+                civicsContainer.appendChild(btn);
+            });
+
+            // 化学カテゴリー（学年ごとに分けて表示）
+            const chemistryContainer = document.getElementById('chemistryCategories');
+            // 中1
+            const grade1Label = document.createElement('div');
+            grade1Label.className = 'grade-label';
+            grade1Label.textContent = '中学1年生';
+            chemistryContainer.appendChild(grade1Label);
+            categories.chemistry.slice(0, 4).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('chemistry', category.id, btn);
+                chemistryContainer.appendChild(btn);
+            });
+            // 中2
+            const grade2Label = document.createElement('div');
+            grade2Label.className = 'grade-label';
+            grade2Label.textContent = '中学2年生';
+            chemistryContainer.appendChild(grade2Label);
+            categories.chemistry.slice(4, 8).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('chemistry', category.id, btn);
+                chemistryContainer.appendChild(btn);
+            });
+            // 中3
+            const grade3Label = document.createElement('div');
+            grade3Label.className = 'grade-label';
+            grade3Label.textContent = '中学3年生';
+            chemistryContainer.appendChild(grade3Label);
+            categories.chemistry.slice(8).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('chemistry', category.id, btn);
+                chemistryContainer.appendChild(btn);
+            });
+
+            // 生物カテゴリー（学年ごとに分けて表示）
+            const biologyContainer = document.getElementById('biologyCategories');
+            // 中1
+            const bioGrade1Label = document.createElement('div');
+            bioGrade1Label.className = 'grade-label';
+            bioGrade1Label.textContent = '中学1年生';
+            biologyContainer.appendChild(bioGrade1Label);
+            categories.biology.slice(0, 3).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('biology', category.id, btn);
+                biologyContainer.appendChild(btn);
+            });
+            // 中2
+            const bioGrade2Label = document.createElement('div');
+            bioGrade2Label.className = 'grade-label';
+            bioGrade2Label.textContent = '中学2年生';
+            biologyContainer.appendChild(bioGrade2Label);
+            categories.biology.slice(3, 10).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('biology', category.id, btn);
+                biologyContainer.appendChild(btn);
+            });
+            // 中3
+            const bioGrade3Label = document.createElement('div');
+            bioGrade3Label.className = 'grade-label';
+            bioGrade3Label.textContent = '中学3年生';
+            biologyContainer.appendChild(bioGrade3Label);
+            categories.biology.slice(10).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('biology', category.id, btn);
+                biologyContainer.appendChild(btn);
+            });
+
+            // 物理カテゴリー（学年ごとに分けて表示）
+            const physicsContainer = document.getElementById('physicsCategories');
+            // 中1
+            const phyGrade1Label = document.createElement('div');
+            phyGrade1Label.className = 'grade-label';
+            phyGrade1Label.textContent = '中学1年生';
+            physicsContainer.appendChild(phyGrade1Label);
+            categories.physics.slice(0, 3).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('physics', category.id, btn);
+                physicsContainer.appendChild(btn);
+            });
+            // 中2
+            const phyGrade2Label = document.createElement('div');
+            phyGrade2Label.className = 'grade-label';
+            phyGrade2Label.textContent = '中学2年生';
+            physicsContainer.appendChild(phyGrade2Label);
+            categories.physics.slice(3, 6).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('physics', category.id, btn);
+                physicsContainer.appendChild(btn);
+            });
+            // 中3
+            const phyGrade3Label = document.createElement('div');
+            phyGrade3Label.className = 'grade-label';
+            phyGrade3Label.textContent = '中学3年生';
+            physicsContainer.appendChild(phyGrade3Label);
+            categories.physics.slice(6).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('physics', category.id, btn);
+                physicsContainer.appendChild(btn);
+            });
+
+            // 地学カテゴリー（学年ごとに分けて表示）
+            const earthContainer = document.getElementById('earthCategories');
+            // 中1
+            const earthGrade1Label = document.createElement('div');
+            earthGrade1Label.className = 'grade-label';
+            earthGrade1Label.textContent = '中学1年生';
+            earthContainer.appendChild(earthGrade1Label);
+            categories.earth.slice(0, 3).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('earth', category.id, btn);
+                earthContainer.appendChild(btn);
+            });
+            // 中2
+            const earthGrade2Label = document.createElement('div');
+            earthGrade2Label.className = 'grade-label';
+            earthGrade2Label.textContent = '中学2年生';
+            earthContainer.appendChild(earthGrade2Label);
+            categories.earth.slice(3, 6).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('earth', category.id, btn);
+                earthContainer.appendChild(btn);
+            });
+            // 中3
+            const earthGrade3Label = document.createElement('div');
+            earthGrade3Label.className = 'grade-label';
+            earthGrade3Label.textContent = '中学3年生';
+            earthContainer.appendChild(earthGrade3Label);
+            categories.earth.slice(6).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('earth', category.id, btn);
+                earthContainer.appendChild(btn);
+            });
+
+            // 英単語カテゴリー
+            const englishWordsContainer = document.getElementById('englishWordsCategories');
+            categories.english_words.forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('english_words', category.id, btn);
+                englishWordsContainer.appendChild(btn);
+            });
+
+            // 英熟語カテゴリー
+            const englishPhrasesContainer = document.getElementById('englishPhrasesCategories');
+            categories.english_phrases.forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('english_phrases', category.id, btn);
+                englishPhrasesContainer.appendChild(btn);
+            });
+
+            // 語形変化カテゴリー（新規追加）
+            const englishGrammarContainer = document.getElementById('englishGrammarCategories');
+            categories.english_grammar.forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn';
+                btn.innerHTML = category.name;
+                btn.dataset.categoryId = category.id;
+                btn.onclick = () => toggleCategorySelection('english_grammar', category.id, btn);
+                englishGrammarContainer.appendChild(btn);
+            });
+        }
+
+        function toggleCategorySelection(subject, categoryId, buttonElement) {
+            soundSystem.playClick();
+            if (selectedCategories.includes(categoryId)) {
+                selectedCategories = selectedCategories.filter(id => id !== categoryId);
+                buttonElement.classList.remove('active');
+            } else {
+                selectedCategories.push(categoryId);
+                buttonElement.classList.add('active');
+            }
+
+            // クイズ開始ボタンの状態を更新
+            const camelCase = subject.split('_')
+                .map((word, index) => index === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word.charAt(0).toUpperCase() + word.slice(1))
+                .join('');
+            const startButton = document.getElementById(`start${camelCase}Quiz`);
+
+            if (startButton) {
+                startButton.disabled = selectedCategories.length === 0;
+            }
+        }
+
+        function startSelectedQuiz(subject, subjectName) {
+            currentSubject = subject;
+            hideAllModals();
+            document.getElementById('currentCategory').textContent = `${subjectName} - ${selectedCategories.length}単元選択`;
+            document.getElementById('gameScreen').classList.remove('hidden');
+            
+            // フローティングボタンを確実に表示
+            const floatingBtn = document.getElementById('changeSubject');
+            floatingBtn.classList.remove('hidden');
+            floatingBtn.style.display = 'flex';
+
+            // 音声設定ボタンを英語科目でのみ表示
+            const voiceBtn = document.getElementById('voiceSettingsButton');
+            if (isEnglishCategory()) {
+                voiceBtn.classList.remove('hidden');
+                voiceBtn.style.display = 'flex';
+            } else {
+                voiceBtn.classList.add('hidden');
+            }
+
+            // 統計をリセット
+            correctCount = 0;
+            wrongCount = 0;
+            totalCount = 0;
+            usedQuestions = [];
+            sequentialIndex = 0; // 順番通り出題のインデックスもリセット
+            updateStats();
+            showNotification(`${subjectName}の${selectedCategories.length}単元を選択しました！`);
+        }
+
+        function updateStats() {
+            document.getElementById('correctCount').textContent = correctCount;
+            document.getElementById('wrongCount').textContent = wrongCount;
+            document.getElementById('totalCount').textContent = totalCount;
+        }
+
+        function setQuestionMode(mode) {
+            questionMode = mode;
+            
+            // ボタンの状態を更新
+            document.getElementById('randomModeBtn').classList.remove('active');
+            document.getElementById('sequentialModeBtn').classList.remove('active');
+            
+            if (mode === 'random') {
+                document.getElementById('randomModeBtn').classList.add('active');
+                document.getElementById('modeDescription').textContent = '問題をランダムに出題します';
+                // ランダムモードに切り替えた時は使用済み問題をリセット
+                usedQuestions = [];
+                showNotification('🎲 ランダム出題に切り替えました');
+            } else {
+                document.getElementById('sequentialModeBtn').classList.add('active');
+                document.getElementById('modeDescription').textContent = '問題を順番通りに出題します';
+                // 順番モードに切り替えた時はインデックスをリセット
+                sequentialIndex = 0;
+                showNotification('📋 順番通り出題に切り替えました');
+            }
+        }
+
+        /* ----------------- クイズ機能（改善版） ----------------- */
+        function openQuiz() {
+            if (selectedCategories.length === 0) {
+                showNotification('単元を選択してください');
+                return;
+            }
+
+            // 選択されたカテゴリから問題を取得（エラーハンドリング強化）
+            let allProblems = [];
+            selectedCategories.forEach(categoryId => {
+                // problemDatabaseが存在し、該当カテゴリがあるかチェック
+                if (typeof problemDatabase !== 'undefined' && problemDatabase && problemDatabase[categoryId]) {
+                    allProblems = allProblems.concat(problemDatabase[categoryId]);
+                } else {
+                    console.warn(`問題データが見つかりません: ${categoryId}`);
+                }
+            });
+
+            if (allProblems.length === 0) {
+                showNotification('選択された単元の問題データが見つかりません。problems.jsが正しく読み込まれているか確認してください。');
+                return;
+            }
+
+            if (usedQuestions.length >= allProblems.length) {
+                usedQuestions = [];
+                showNotification('🎉 全問クリア！問題をリセットしました');
+            }
+
+            // 出題形式に応じた問題選択
+            let quiz;
+            let remainingCount;
+            
+            if (questionMode === 'random') {
+                const availableQuestions = allProblems.filter((_, index) => !usedQuestions.includes(index));
+                if (availableQuestions.length === 0) return;
+                
+                const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+                quiz = availableQuestions[randomIndex];
+                const originalIndex = allProblems.indexOf(quiz);
+                usedQuestions.push(originalIndex);
+                remainingCount = allProblems.length - usedQuestions.length;
+            } else {
+                // 順番通り出題
+                if (sequentialIndex >= allProblems.length) {
+                    sequentialIndex = 0;
+                    showNotification('🔄 全問題を一周しました！最初から再開します');
+                }
+                quiz = allProblems[sequentialIndex];
+                sequentialIndex++;
+                remainingCount = allProblems.length - sequentialIndex;
+                if (remainingCount < 0) remainingCount = 0;
+            }
+
+            const modal = document.getElementById('quizModal');
+            const qEl = document.getElementById('quizQ');
+            const optDiv = document.getElementById('quizOptions');
+            const msgEl = document.getElementById('quizMsg');
+            const explanationEl = document.getElementById('quizExplanation');
+            const nextBtn = document.getElementById('quizNext');
+            const backBtn = document.getElementById('quizBack');
+
+            qEl.textContent = `${quiz.q} (残り${remainingCount}問)`;
+            optDiv.innerHTML = '';
+            msgEl.textContent = '';
+            explanationEl.classList.remove('has-content');
+
+            // 英語の問題なら音声で発音
+            if (isEnglishCategory()) {
+                speakWord(quiz.q);
+            }
+
+            // 初期状態：ボタンを無効化
+            nextBtn.disabled = true;
+            nextBtn.style.opacity = '0.3';
+            backBtn.disabled = true;
+            backBtn.style.opacity = '0.3';
+
+let firstAnswer = false; // 最初の回答のみフラグ
+
+quiz.opts.forEach((txt, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = txt;
+    btn.className = 'quiz-option w-full';
+    btn.onclick = () => {
+        // 英語の選択肢なら音声で発音
+        if (isEnglishCategory()) {
+            speakWord(txt);
+        }
+        
+        // 最初の回答のみ統計を更新
+        if (!firstAnswer) {
+            firstAnswer = true;
+            totalCount++;
+            if (i === quiz.ans) {
+                correctCount++;
+                soundSystem.playCorrect();
+                showNotification('正解です！素晴らしい！');
+                createParticle('✨ 正解！', '#10b981', window.innerWidth / 2, window.innerHeight / 2);
+            } else {
+                wrongCount++;
+                soundSystem.playWrong();
+            }
+            updateStats();
+            
+            // 最初の回答後：ボタンを有効化
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            backBtn.disabled = false;
+            backBtn.style.opacity = '1';
+        }
+        
+        // 毎回の選択肢に対する解説表示
+        if (i === quiz.ans) {
+            msgEl.innerHTML = `🎉 正解！${quiz.exp || ''}`;
+            msgEl.style.color = '#10b981';
+        } else {
+            msgEl.innerHTML = `❌ 残念...不正解。正解は「${quiz.opts[quiz.ans]}」です。${quiz.exp || ''}`;
+            msgEl.style.color = '#ef4444';
+        }
+        explanationEl.classList.add('has-content');
+    };
+    optDiv.appendChild(btn);
+});
+
+            // 次の問題ボタンの処理
+            nextBtn.onclick = () => {
+                soundSystem.playClick();
+                loadNextQuiz();
+            };
+
+            // 戻るボタンの処理
+            backBtn.onclick = () => {
+                soundSystem.playClick();
+                modal.classList.remove('show');
+                showNotification('お疲れ様でした！');
+            };
+
+            modal.classList.add('show');
+        }
+
+        function loadNextQuiz() {
+            // 選択されたカテゴリから問題を取得（エラーハンドリング強化）
+            let allProblems = [];
+            selectedCategories.forEach(categoryId => {
+                if (typeof problemDatabase !== 'undefined' && problemDatabase && problemDatabase[categoryId]) {
+                    allProblems = allProblems.concat(problemDatabase[categoryId]);
+                }
+            });
+
+            if (allProblems.length === 0) return;
+
+            if (usedQuestions.length >= allProblems.length) {
+                usedQuestions = [];
+                showNotification('🎉 全問クリア！問題をリセットしました');
+            }
+
+            // 出題形式に応じた問題選択
+            let quiz;
+            let remainingCount;
+            
+            if (questionMode === 'random') {
+                const availableQuestions = allProblems.filter((_, index) => !usedQuestions.includes(index));
+                if (availableQuestions.length === 0) return;
+                
+                const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+                quiz = availableQuestions[randomIndex];
+                const originalIndex = allProblems.indexOf(quiz);
+                usedQuestions.push(originalIndex);
+                remainingCount = allProblems.length - usedQuestions.length;
+            } else {
+                // 順番通り出題
+                if (sequentialIndex >= allProblems.length) {
+                    sequentialIndex = 0;
+                    showNotification('🔄 全問題を一周しました！最初から再開します');
+                }
+                quiz = allProblems[sequentialIndex];
+                sequentialIndex++;
+                remainingCount = allProblems.length - sequentialIndex;
+                if (remainingCount < 0) remainingCount = 0;
+            }
+
+            // モーダル内の要素を直接更新
+            const qEl = document.getElementById('quizQ');
+            const optDiv = document.getElementById('quizOptions');
+            const msgEl = document.getElementById('quizMsg');
+            const explanationEl = document.getElementById('quizExplanation');
+            const nextBtn = document.getElementById('quizNext');
+            const backBtn = document.getElementById('quizBack');
+
+            qEl.textContent = `${quiz.q} (残り${remainingCount}問)`;
+            optDiv.innerHTML = '';
+            msgEl.textContent = '';
+            explanationEl.classList.remove('has-content');
+
+            // ボタンを無効化
+            nextBtn.disabled = true;
+            nextBtn.style.opacity = '0.3';
+            backBtn.disabled = true;
+            backBtn.style.opacity = '0.3';
+
+let firstAnswer = false; // 最初の回答のみフラグ
+
+// 選択肢を再生成
+quiz.opts.forEach((txt, i) => {
+    const btn = document.createElement('button');
+    btn.textContent = txt;
+    btn.className = 'quiz-option w-full';
+    btn.onclick = () => {
+        // 英語の選択肢なら音声で発音
+        if (isEnglishCategory()) {
+            speakWord(txt);
+        }
+        
+        // 最初の回答のみ統計を更新
+        if (!firstAnswer) {
+            firstAnswer = true;
+            totalCount++;
+            if (i === quiz.ans) {
+                correctCount++;
+                soundSystem.playCorrect();
+                showNotification('正解です！素晴らしい！');
+                createParticle('✨ 正解！', '#10b981', window.innerWidth / 2, window.innerHeight / 2);
+            } else {
+                wrongCount++;
+                soundSystem.playWrong();
+            }
+            updateStats();
+            
+            // 最初の回答後：ボタンを有効化
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            backBtn.disabled = false;
+            backBtn.style.opacity = '1';
+        }
+        
+        // 毎回の選択肢に対する解説表示
+        if (i === quiz.ans) {
+            msgEl.innerHTML = `🎉 正解！${quiz.exp || ''}`;
+            msgEl.style.color = '#10b981';
+        } else {
+            msgEl.innerHTML = `❌ 残念...不正解。正解は「${quiz.opts[quiz.ans]}」です。${quiz.exp || ''}`;
+            msgEl.style.color = '#ef4444';
+        }
+        explanationEl.classList.add('has-content');
+    };
+    optDiv.appendChild(btn);
+});
+        }
+
+        /* ----------------- イベントリスナー ----------------- */
+        function initEventListeners() {
+            // メイン教科選択
+            document.querySelectorAll('[data-subject]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    soundSystem.playClick();
+                    const subject = e.currentTarget.dataset.subject;
+                    hideAllModals();
+                    document.getElementById(subject + 'Modal').classList.add('show');
+                });
+            });
+
+            // 詳細カテゴリ選択
+            document.querySelectorAll('[data-category]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    soundSystem.playClick();
+                    const category = e.currentTarget.dataset.category;
+                    selectedCategories = []; // リセット
+                    hideAllModals();
+                    
+                    // アンダースコアをキャメルケースに変換
+                    const modalId = category.split('_')
+                        .map((word, index) => index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1))
+                        .join('');
+                    
+                    document.getElementById(modalId + 'Modal').classList.add('show');
+                });
+            });
+
+            // クイズ開始ボタン群
+            document.getElementById('startGeographyQuiz').addEventListener('click', () => {
+                soundSystem.playSuccess();
+                startSelectedQuiz('geography', '🗺️ 地理');
+            });
+            document.getElementById('startHistoryQuiz').addEventListener('click', () => {
+                soundSystem.playSuccess();
+                startSelectedQuiz('history', '🏛️ 歴史');
+            });
+            document.getElementById('startCivicsQuiz').addEventListener('click', () => {
+                soundSystem.playSuccess();
+                startSelectedQuiz('civics', '⚖️ 公民');
+            });
+            document.getElementById('startChemistryQuiz').addEventListener('click', () => {
+                soundSystem.playSuccess();
+                startSelectedQuiz('chemistry', '🧪 化学');
+            });
+            document.getElementById('startBiologyQuiz').addEventListener('click', () => {
+                soundSystem.playSuccess();
+                startSelectedQuiz('biology', '🧬 生物');
+            });
+            document.getElementById('startPhysicsQuiz').addEventListener('click', () => {
+                soundSystem.playSuccess();
+                startSelectedQuiz('physics', '⚛️ 物理');
+            });
+            document.getElementById('startEarthQuiz').addEventListener('click', () => {
+                soundSystem.playSuccess();
+                startSelectedQuiz('earth', '🌍 地学');
+            });
+            document.getElementById('startEnglishWordsQuiz').addEventListener('click', () => {
+                soundSystem.playSuccess();
+                startSelectedQuiz('english_words', '📝 英単語');
+            });
+            document.getElementById('startEnglishPhrasesQuiz').addEventListener('click', () => {
+                soundSystem.playSuccess();
+                startSelectedQuiz('english_phrases', '💬 英熟語');
+            });
+            document.getElementById('startEnglishGrammarQuiz').addEventListener('click', () => {
+                soundSystem.playSuccess();
+                startSelectedQuiz('english_grammar', '📘 語形変化');
+            });
+
+            // メインクイズスタートボタン
+            document.getElementById('startQuizButton').addEventListener('click', () => {
+                soundSystem.playSuccess();
+                openQuiz();
+            });
+
+            // 出題形式切り替えボタン
+            document.getElementById('randomModeBtn').addEventListener('click', () => {
+                soundSystem.playClick();
+                setQuestionMode('random');
+            });
+            
+            document.getElementById('sequentialModeBtn').addEventListener('click', () => {
+                soundSystem.playClick();
+                setQuestionMode('sequential');
+            });
+
+            // 教科変更ボタン（新規追加）
+            document.getElementById('changeSubject').addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                soundSystem.playClick();
+                selectedCategories = [];
+                sequentialIndex = 0;
+                usedQuestions = [];
+                document.getElementById('gameScreen').classList.add('hidden');
+                document.getElementById('changeSubject').classList.add('hidden');
+                document.getElementById('voiceSettingsButton').classList.add('hidden');
+                goBackToMain();
+            });
+
+            // 音声設定ボタンのイベントリスナー
+            document.getElementById('voiceSettingsButton').addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                soundSystem.playClick();
+                document.getElementById('voiceSettingsModal').classList.add('show');
+            });
+
+            // 音声設定モーダルの閉じるボタン
+            document.getElementById('closeVoiceSettings').addEventListener('click', () => {
+                soundSystem.playClick();
+                document.getElementById('voiceSettingsModal').classList.remove('show');
+            });
+
+            // 音声ON/OFF切り替え
+            document.getElementById('voiceEnabled').addEventListener('change', (e) => {
+                voiceSystem.toggleEnabled(e.target.checked);
+                soundSystem.playClick();
+            });
+        }
+
+        /* ----------------- 全ボタンに効果音を追加 ----------------- */
+        function addSoundToButtons() {
+            document.addEventListener('click', (e) => {
+                if (e.target.matches('button:not([data-sound-added])') && !e.target.disabled) {
+                    e.target.setAttribute('data-sound-added', 'true');
+                }
+            });
+            
+            // タップ拡大防止の追加設定
+            document.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+            
+            document.addEventListener('gesturestart', (e) => {
+                e.preventDefault();
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCategorySelection();
+            initEventListeners();
+            addSoundToButtons();
+            
+            // フローティングボタンの初期状態を確実に設定
+            document.getElementById('changeSubject').classList.add('hidden');
+            document.getElementById('voiceSettingsButton').classList.add('hidden');
+            
+            // タップ拡大防止の最終設定
+            document.body.style.webkitTouchCallout = 'none';
+            document.body.style.webkitUserSelect = 'none';
+            document.body.style.userSelect = 'none';
+
+            // 音声システムの初期化（ユーザーインタラクション後）
+            document.addEventListener('click', () => {
+                if (soundSystem.audioContext && soundSystem.audioContext.state === 'suspended') {
+                    soundSystem.audioContext.resume();
+                }
+            }, { once: true });
+        });
+    </script>
+</body>
+</html>
